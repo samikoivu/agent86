@@ -1,0 +1,39 @@
+Agent86 v0.017 reporting to duty.
+Injected java.lang.String
+Injected javax/servlet/http/HttpServlet.service
+===================================================
+Request ID: 5bb5257fc2d66220
+Duration: 1313ms
+Unique strings created: 152116
+Classes loaded: 299
+
+===================================================
+Request ID: 5fff476eee4fb4a9
+Duration: 94ms
+Unique strings created: 3349
+Classes loaded: 2
+
+===================================================
+Request ID: 46f372ee441d76eb
+Duration: 95ms
+Unique strings created: 3746
+Classes loaded: 4
+
+===================================================
+Request ID: 40f65e0c72153b38
+Duration: 100ms
+Unique strings created: 4041
+Classes loaded: 4
+
+===================================================
+Request ID: 42e06779337db839
+Duration: 37ms
+Unique strings created: 3175
+Classes loaded: 0
+
+===================================================
+Request ID: aa658a6efbeff33f
+Duration: 19ms
+Unique strings created: 3731
+Classes loaded: 0
+

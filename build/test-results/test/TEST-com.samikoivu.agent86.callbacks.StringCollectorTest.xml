@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.samikoivu.agent86.callbacks.StringCollectorTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2018-10-06T04:38:12" hostname="SKOIVU-BR" time="0.001">
+  <properties/>
+  <testcase name="testStringCollection()" classname="com.samikoivu.agent86.callbacks.StringCollectorTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

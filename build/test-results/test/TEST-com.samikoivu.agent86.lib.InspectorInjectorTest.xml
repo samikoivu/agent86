@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.samikoivu.agent86.lib.InspectorInjectorTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2018-10-06T04:38:11" hostname="SKOIVU-BR" time="0.179">
+  <properties/>
+  <testcase name="testIsFor()" classname="com.samikoivu.agent86.lib.InspectorInjectorTest" time="0.017"/>
+  <testcase name="testMethodListing()" classname="com.samikoivu.agent86.lib.InspectorInjectorTest" time="0.113"/>
+  <testcase name="testIsForNoProvidedClassName()" classname="com.samikoivu.agent86.lib.InspectorInjectorTest" time="0.006"/>
+  <testcase name="testInjectionAtReturn()" classname="com.samikoivu.agent86.lib.InspectorInjectorTest" time="0.02"/>
+  <testcase name="testInjectionAtStart()" classname="com.samikoivu.agent86.lib.InspectorInjectorTest" time="0.006"/>
+  <testcase name="testInjectionPassingArgs()" classname="com.samikoivu.agent86.lib.InspectorInjectorTest" time="0.011"/>
+  <system-out><![CDATA[Callback with: 3 7 11
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
