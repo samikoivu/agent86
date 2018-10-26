@@ -8,14 +8,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.samikoivu.agent86.callbacks.Callbacks;
+import com.samikoivu.agent86.callbacks.test.TestCallbacks;
 import com.samikoivu.agent86.callbacks.ClassLoaderUtil;
 import com.samikoivu.agent86.callbacks.test.TestSensor;
 import com.samikoivu.agent86.callbacks.test.TestSensor.TestCallback;
@@ -110,7 +108,7 @@ class InspectorInjectorTest {
 		boolean added = false;
 		for (CodeBlock method : methods) {
 			if (method.getName().equals("inc")) {
-				Callbacks callback = Callbacks.TEST_SENSOR;
+				TestCallbacks callback = TestCallbacks.TEST_SENSOR;
 				Option callbackOptions = Option.AT_START;
 				ii.addCallback(method, callback, callbackOptions );
 				added = true;
@@ -158,7 +156,7 @@ class InspectorInjectorTest {
 		boolean added = false;
 		for (CodeBlock method : methods) {
 			if (method.getName().equals("inc")) {
-				Callbacks callback = Callbacks.TEST_SENSOR;
+				TestCallbacks callback = TestCallbacks.TEST_SENSOR;
 				Option callbackOptions = Option.BEFORE_RETURN;
 				ii.addCallback(method, callback, callbackOptions );
 				added = true;
@@ -207,7 +205,7 @@ class InspectorInjectorTest {
 		boolean added = false;
 		for (CodeBlock method : methods) {
 			if (method.getName().equals("addAll")) {
-				Callbacks callback = Callbacks.TEST_SENSOR_WITH_ARGS;
+				TestCallbacks callback = TestCallbacks.TEST_SENSOR_WITH_ARGS;
 				ii.addCallback(method, callback, Option.AT_START, Option.PASS_ARGS);
 				added = true;
 			}

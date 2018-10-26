@@ -2,7 +2,6 @@ package com.samikoivu.agent86.agent;
 
 import java.io.PrintStream;
 import java.lang.instrument.Instrumentation;
-import java.lang.instrument.UnmodifiableClassException;
 
 import com.samikoivu.agent86.lib.AgentTransformer;
 import com.samikoivu.agent86.lib.SuperSimpleLogger;
@@ -21,7 +20,10 @@ import com.samikoivu.agent86.lib.SuperSimpleLogger;
  *
  */
 public class A86 {
-	
+
+	/*
+	 * Premain for a Java-Agent. Signature defined by the Java-Agent documentation.
+	 */
 	public static void premain(String args, Instrumentation inst) {
 		SuperSimpleLogger logger = SuperSimpleLogger.getInstance();
 		PrintStream log = logger.getStream();

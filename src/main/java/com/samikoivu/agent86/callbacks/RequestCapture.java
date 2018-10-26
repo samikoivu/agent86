@@ -4,6 +4,9 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Instances of this class represent one captured HTTP request.
+ */
 public class RequestCapture {
 
 	/**

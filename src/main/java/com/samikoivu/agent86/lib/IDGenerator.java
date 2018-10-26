@@ -6,6 +6,8 @@ import java.util.Random;
  * Generates "unique" IDs to inject into HTTP responses (as a header).
  * 
  * Shoddy implementation doesn't really guarantee uniqueness to any real degree. Also uses regular Random rather than SecureRandom.
+ * 
+ * Not for production use. :)
  */
 public class IDGenerator {
 	

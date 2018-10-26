@@ -47,7 +47,9 @@ public class CodeBlock {
 		return this.name.equals("<init>");
 	}
 
-	public boolean matches(String methodName, Class ... mtdArgs) {
+	public boolean matches(String methodName, 
+			/* not mixing generics and arrays */
+			@SuppressWarnings("rawtypes") Class ... mtdArgs) {
 		if (!this.name.equals(methodName)) return false;
 		
 		if (mtdArgs.length != this.params.size()) return false;

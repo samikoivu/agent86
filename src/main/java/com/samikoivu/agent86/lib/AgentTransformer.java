@@ -44,8 +44,9 @@ public class AgentTransformer implements ClassFileTransformer {
 				log.println("Injected java.lang.String");
 			}
 			
+			// Initial implementation targeted all Servlet subclasses, but targetting just the HttpServlet seems to be just fine
 			if (!ii.isInterface() // don't bother with interfaces
-				&& "javax/servlet/http/HttpServlet".equals(className)) { // target HttpServlet for now as it seems to work
+				&& "javax/servlet/http/HttpServlet".equals(className)) {
 				// Servlet method injection
 				List<CodeBlock> methods = ii.getMethods();
 				CodeBlock service = null;
@@ -67,19 +68,19 @@ public class AgentTransformer implements ClassFileTransformer {
 				if (service != null) {
 					ii.addCallback(service, Callbacks.BEGIN_REQUEST, Option.AT_START, Option.PASS_ARGS);
 					ii.addCallback(service, Callbacks.END_REQUEST, Option.BEFORE_RETURN);
-					log.println("Injected " + className + ".service");
+					log.println("Injected " + className + ".service(...)");
 				} else {
 					// no service
 					if (doGet != null) {
 						ii.addCallback(doGet, Callbacks.BEGIN_REQUEST, Option.AT_START, Option.PASS_ARGS);
 						ii.addCallback(doGet, Callbacks.END_REQUEST, Option.BEFORE_RETURN);
-						log.println("Injected " + className + ".doGet");
+						log.println("Injected " + className + ".doGet(...)");
 					}
 					
 					if (doPost != null) {
 						ii.addCallback(doPost, Callbacks.BEGIN_REQUEST, Option.AT_START, Option.PASS_ARGS);
 						ii.addCallback(doPost, Callbacks.END_REQUEST, Option.BEFORE_RETURN);
-						log.println("Injected " + className + ".doPost");
+						log.println("Injected " + className + ".doPost(...)");
 					}
 				}
 			}

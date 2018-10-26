@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.samikoivu.agent86.callbacks.Callbacks;
+import com.samikoivu.agent86.callbacks.CallbackDefinition;
 
 import net.sf.rej.java.AccessFlags;
 import net.sf.rej.java.ClassFile;
@@ -50,12 +50,31 @@ public class InspectorInjector {
 	private String name;
 	
 	/**
-	 * reJ bytecode engineering Class definition
+	 * reJ bytecode engineering Class definition. Should only be accessed by getter method as it performs the decompilation on first
+	 * invocation.
 	 */
 	private ClassFile cls = null;
-	
+
+	/** Injection options
+	 * 
+	 */
 	public static enum Option {
-		AT_START, PASS_ARGS, BEFORE_RETURN, PASS_THIS
+		/**
+		 * Inject callback code at the start of the method
+		 */
+		AT_START,
+		/**
+		 * Pass all method arguments with the injected callback
+		 */
+		PASS_ARGS, 
+		/**
+		 * Inject callback code at all exit points, ie. before every return statement
+		 */
+		BEFORE_RETURN, 
+		/**
+		 * Pass "this" as an argument to the callback method
+		 */
+		PASS_THIS
 	}
 
 	public InspectorInjector(String className, byte[] data) {
@@ -67,7 +86,7 @@ public class InspectorInjector {
 	}
 	
 	/**
-	 * Lazy decompilation
+	 * Only decompile if required, ie. someone calls this method.
 	 */
 	private ClassFile getClassFile() {
 		if (this.cls == null) {
@@ -77,6 +96,11 @@ public class InspectorInjector {
 		return this.cls;
 	}
 
+	/**
+	 * Return bytecode. If callbacks have been injected, the new bytecode is derived from the internal model, otherwise the original
+	 * array is returned.
+	 * @return bytecode as a byte array
+	 */
 	public byte[] getData() {
 		if (!modified) {
 			return originalData;
@@ -85,6 +109,10 @@ public class InspectorInjector {
 		}
 	}
 	
+	/**
+	 * The fully qualified name of the class being inspected and injected.
+	 * @return Name of the class being inspected.
+	 */
 	public String getName() {
 		if (this.name == null) {
 			this.name = getClassFile().getFullClassName();
@@ -93,10 +121,20 @@ public class InspectorInjector {
 		return this.name;
 	}
 
+	/**
+	 * Returns true if this Inspector is for the class given as argument. Only the fully qualified name of the class is considered.
+	 * (Class identity in Java is name + ClassLoader).
+	 * @param klass Class to compare
+	 * @return true if argument points at a class with the same name as the definition this Inspector works on.
+	 */
 	public boolean isFor(Class<?> klass) {
 		return klass.getName().equals(getName());
 	}
 
+	/**
+	 * Return a List containing all the Methods (and Constructors) of this class as <code>CodeBlock</code> instances.
+	 * @return list of the methods of this class.
+	 */
 	public List<CodeBlock> getMethods() {
 		List<Method> mtds = getClassFile().getMethods();
 		List<CodeBlock> ret = new ArrayList<>();
@@ -111,7 +149,14 @@ public class InspectorInjector {
 		return ret;
 	}
 
-	public void addCallback(CodeBlock codeBlock, Callbacks callback, Option ... callbackOptions) {
+	/**
+	 * Inject a callback to the method or constructor defined by codeBlock argument. The method to be called is defined by the callback argument
+	 * and callbackOptions determines when the injected  callback happens and what the arguments are.
+	 * @param codeBlock Method to inject
+	 * @param callback Method to callback
+	 * @param callbackOptions Options defining the specifics of the callback
+	 */
+	public void addCallback(CodeBlock codeBlock, CallbackDefinition callback, Option ... callbackOptions) {
 		this.modified = true; // mark as modified
 		List<Option> opts = Arrays.asList(callbackOptions);
 
@@ -152,7 +197,10 @@ public class InspectorInjector {
 		}
 	}
 	
-	private void injectCallback(int offset, List<Option> opts, Callbacks callback, String signature, Code code, ConstantPool cp, Method method) {
+	/*
+	 * The actual low-level injection logic
+	 */
+	private void injectCallback(int offset, List<Option> opts, CallbackDefinition callback, String signature, Code code, ConstantPool cp, Method method) {
 		if (opts.contains(Option.PASS_THIS)) {
 			// regular method - pass this: just do an aload_0 followed by invokestatic
 			_invokestatic invoke = new _invokestatic();
@@ -213,115 +261,12 @@ public class InspectorInjector {
 
 	}
 
+	/**
+	 * Returns true if the type being inspected is an interface.
+	 * @return is the interface
+	 */
 	public boolean isInterface() {
 		return AccessFlags.isInterface(getClassFile().getAccessFlags());
 	}
 
 }
-
-/*class CFT implements ClassFileTransformer {
-
-@Override
-public byte[] transform(ClassLoader loader, String className,
-		Class<?> classBeingRedefined, ProtectionDomain protectionDomain,
-		byte[] classfileBuffer) throws IllegalClassFormatException {
-//	System.out.println("Agent looking at " + className + " from " + classBeingRedefined);
-//	if ("java/io/ObjectInputStream".equals(className)) {
-//	    return transformClass(classBeingRedefined, classfileBuffer);
-//	}
-	if (!className.startsWith("java")) {
-		instrumentServletMethods(classBeingRedefined, classfileBuffer);
-	}
-	
-	// find String constructors? and factory methods? refresh your brain implementation
-	// then, if thread is in map, record the created strings
-	
-	return classfileBuffer;
-}
-
-private byte[] instrumentServletMethods(Class classToTransform, byte[] b) {
-	byte[] transformed = b.clone();
-	// look for protected void service (HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	// and add a callback at the start that records start time and thread id
-	// and a callback at the end^H^H^H before every return bytecode instruction which calculates duration and logs the created strings and adds ID to the response
-	return transformed;
-}
-private byte[] transformClass(Class classToTransform, byte[] b) {
-	byte[] transformed = b.clone();
-	try {
-		System.out.println("Transforming class");
-		ClassFile cls = Disassembler.readClass(b);
-		ConstantPool cp = cls.getPool();
-		List<Method> methods = cls.getMethods();
-		for (Method m : methods) {
-			if (m.getName().equals("readObject")) {
-				System.out.println("Transforming method");
-				CodeAttribute ca = m.getAttributes().getCode();
-				Code code = ca.getCode();
-
-//				int fieldid = cp.indexOfFieldRef("java.io.ObjectInputStream", "unsharedMarker", "Ljava/lang/Object;");
-//				System.out.println("fieldid: " + fieldid);
-//				_getstatic getStatic = new _getstatic(fieldid);
-//				
-//				_invokevirtual invoke = new _invokevirtual();
-//				Parameters invokeParams = new Parameters();
-//				invokeParams.addParam(ParameterType.TYPE_CONSTANT_POOL_METHOD_REF);
-//				int methodRef = cp.optionalAddMethodRef(Object.class.getName(), "toString", "()Ljava/lang/String;");
-//				invokeParams.addValue(methodRef);
-//				invoke.setParameters(invokeParams);
-//
-//				code.add(0, getStatic);
-//				code.add(1, invoke);
-//				code.add(2, new _pop());
-
-				
-				_invokestatic invoke = new _invokestatic();
-				Parameters invokeParams = new Parameters();
-				invokeParams.addParam(ParameterType.TYPE_CONSTANT_POOL_METHOD_REF);
-				int methodRef = cp.optionalAddMethodRef(AgentLib.class.getName(), "check", "()V");
-				invokeParams.addValue(methodRef);
-				invoke.setParameters(invokeParams);
-
-				code.add(0, invoke);
-
-			}
-		}
-		
-		transformed = cls.getData();
-	} catch (Throwable t) {
-		t.printStackTrace();
-	}
-	System.out.println("Done transforming class");
-			
-//	List<Field> fields = cls.getFields();
-//	for (Field f : fields) {
-//		if (f.getName().equals("unsharedMarker")) {
-//			System.out.println("unshared marker made non-final");
-//			AccessFlags accessFlags = new AccessFlags(f.getAccessFlags());
-//			accessFlags.setFinal(false);
-//			f.setAccessFlags(accessFlags);
-//		}
-//	}
-//	cls.setFields(fields);
-	
-//	try {
-//		FileOutputStream fos = new FileOutputStream("C:\\Users\\skoivu\\Desktop\\ObjectInputStream_.class");
-//		fos.write(transformed);
-//		fos.flush();
-//		fos.close();
-//	} catch (Exception e) {
-//		e.printStackTrace();
-//	}
-//	System.out.println(b.length);
-//	System.out.println(transformed.length);
-//	for (int i=0; i < Math.min(b.length, transformed.length); i++) {
-//		if (b[i] == transformed[i]) continue;
-//		
-//		System.out.println(Integer.toHexString(i) + ": " + b[i]);
-//		System.out.println(Integer.toHexString(i) + ": " + transformed[i]);
-//	}
-	
-	return transformed;
-}
-}
-*/

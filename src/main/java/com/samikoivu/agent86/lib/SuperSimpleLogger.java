@@ -3,6 +3,9 @@ package com.samikoivu.agent86.lib;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 
+/**
+ * Quick and dirty file logger that is independent of the logger configurations of the process where the agent runs.
+ */
 public class SuperSimpleLogger {
 	private static SuperSimpleLogger INSTANCE = null;
 
