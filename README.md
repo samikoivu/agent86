@@ -1,4 +1,4 @@
-# agent86 - a Java Agent demo
+# agent86 - a Java Agent demo [![Build Status](https://travis-ci.com/samikoivu/agent86.svg?branch=master)](https://travis-ci.com/samikoivu/agent86)
 
 Run against WebGoat with a command line as follows (adjust java-command or path to local Java 8, and full path towebgoat.jar, all other paths are relative to the project root):
 
