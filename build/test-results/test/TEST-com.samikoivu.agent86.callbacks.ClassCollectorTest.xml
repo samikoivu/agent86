@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.samikoivu.agent86.callbacks.ClassCollectorTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2018-10-24T23:45:58" hostname="SKOIVU-BR" time="0.006">
-  <properties/>
-  <testcase name="testClassCollection()" classname="com.samikoivu.agent86.callbacks.ClassCollectorTest" time="0.006"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
