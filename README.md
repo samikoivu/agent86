@@ -2,7 +2,15 @@
 
 Download WebGoat: XXX
 
-Download agent86, reJ and Java servlet support.
+Download
+
+agent86: https://github.com/samikoivu/agent86/releases/download/rel1/agent86.jar
+
+reJ bytecode API: https://github.com/samikoivu/rej/releases/download/v0.7/rej.jar
+
+Java servlet API: https://maven.java.net/content/repositories/releases/javax/servlet/javax.servlet-api/4.0.0/javax.servlet-api-4.0.0.jar
+
+WebGoat: https://github.com/WebGoat/WebGoat/releases
 
 Run against WebGoat with a command line as follows (adjust java-command or path to local Java 8, and full path to webgoat.jar, rej.jar and agent86.jar
 
