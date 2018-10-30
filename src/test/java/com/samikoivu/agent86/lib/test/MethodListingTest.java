@@ -14,6 +14,7 @@ public class MethodListingTest {
 	public static void b() {
 	}
 
-	private void c(String a, String b, Class c) {
+	@SuppressWarnings("unused")
+	private void c(String a, String b, Class<?> c) {
 	}
 }

@@ -34,6 +34,11 @@ public class RequestCapture {
 	 */
 	private List<String> classes;
 
+	/**
+	 * Request URI. Not required for the project, but makes things clearer.
+	 */
+	private String uri;
+
 	public void setStart(long starMillis) {
 		this.startMilis = starMillis;
 	}
@@ -44,6 +49,7 @@ public class RequestCapture {
 
 	public void printCapturedInfo(PrintStream out) {
 		out.println("===================================================");
+		out.println("Request URI: " + this.uri);
 		out.println("Request ID: " + this.id);
 		out.println("Duration: " + (this.endMillis-this.startMilis) + "ms");
 		out.println("Unique strings created: " + this.collectedStrings.size());
@@ -65,4 +71,8 @@ public class RequestCapture {
 		this.classes = classes;
 	}
 
+	public void setURI(String uri) {
+		this.uri = uri;
+	}
+	
 }

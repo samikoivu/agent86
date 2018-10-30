@@ -1,4 +1,4 @@
-package com.samikoivu.agent86.lib;
+package com.samikoivu.agent86.lib.bytecode;
 
 import java.util.List;
 

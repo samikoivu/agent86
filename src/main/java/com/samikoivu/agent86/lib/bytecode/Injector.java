@@ -1,4 +1,4 @@
-package com.samikoivu.agent86.lib;
+package com.samikoivu.agent86.lib.bytecode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,10 +7,8 @@ import java.util.List;
 import com.samikoivu.agent86.callbacks.CallbackDefinition;
 
 import net.sf.rej.java.AccessFlags;
-import net.sf.rej.java.ClassFile;
 import net.sf.rej.java.Code;
 import net.sf.rej.java.Descriptor;
-import net.sf.rej.java.Disassembler;
 import net.sf.rej.java.JavaType;
 import net.sf.rej.java.Method;
 import net.sf.rej.java.attribute.CodeAttribute;
@@ -26,34 +24,13 @@ import net.sf.rej.java.instruction._iload;
 import net.sf.rej.java.instruction._invokestatic;
 import net.sf.rej.java.instruction._lload;
 
-/**
- * This class does all the classfile inspection and bytecode injection. Using reJ, but this class could be altered to use something
- * better supported without changing any of the other classes of the agent.
- */
-public class InspectorInjector {
+public class Injector {
 	
-	/**
-	 * Has the underlying class been modified, ie. do we need to recalculate the class definition from the model, or can we use the
-	 * original provided byte array.
-	 */
-	private boolean modified;
-	
-	/**
-	 * The original class definition we use as a starting point for any modifications.
-	 */
-	private byte[] originalData;
-	
-	/**
-	 * Class name. Lazily initialized from class definition if not available otherwise. This should not be accessed directly, but rahter
-	 * getName() should be called.
-	 */
-	private String name;
-	
-	/**
-	 * reJ bytecode engineering Class definition. Should only be accessed by getter method as it performs the decompilation on first
-	 * invocation.
-	 */
-	private ClassFile cls = null;
+	private ByteCodeTools bct;
+
+	Injector(ByteCodeTools bct) {
+		this.bct = bct;
+	}
 
 	/** Injection options
 	 * 
@@ -77,78 +54,7 @@ public class InspectorInjector {
 		PASS_THIS
 	}
 
-	public InspectorInjector(String className, byte[] data) {
-		if (className != null) {
-			this.name = className.replace('/', '.'); // translate from internal representation to dots, TODO anything else? subclasses?
-		}
-		this.originalData = data;
-		this.modified = false;
-	}
 	
-	/**
-	 * Only decompile if required, ie. someone calls this method.
-	 */
-	private ClassFile getClassFile() {
-		if (this.cls == null) {
-			this.cls = Disassembler.readClass(this.originalData);
-		}
-		
-		return this.cls;
-	}
-
-	/**
-	 * Return bytecode. If callbacks have been injected, the new bytecode is derived from the internal model, otherwise the original
-	 * array is returned.
-	 * @return bytecode as a byte array
-	 */
-	public byte[] getData() {
-		if (!modified) {
-			return originalData;
-		} else {
-			return getClassFile().getData();
-		}
-	}
-	
-	/**
-	 * The fully qualified name of the class being inspected and injected.
-	 * @return Name of the class being inspected.
-	 */
-	public String getName() {
-		if (this.name == null) {
-			this.name = getClassFile().getFullClassName();
-		}
-		
-		return this.name;
-	}
-
-	/**
-	 * Returns true if this Inspector is for the class given as argument. Only the fully qualified name of the class is considered.
-	 * (Class identity in Java is name + ClassLoader).
-	 * @param klass Class to compare
-	 * @return true if argument points at a class with the same name as the definition this Inspector works on.
-	 */
-	public boolean isFor(Class<?> klass) {
-		return klass.getName().equals(getName());
-	}
-
-	/**
-	 * Return a List containing all the Methods (and Constructors) of this class as <code>CodeBlock</code> instances.
-	 * @return list of the methods of this class.
-	 */
-	public List<CodeBlock> getMethods() {
-		List<Method> mtds = getClassFile().getMethods();
-		List<CodeBlock> ret = new ArrayList<>();
-		for (Method mtd : mtds) {
-			CodeBlock cb = new CodeBlock();
-			cb.setName(mtd.getName());
-			cb.setParameters(mtd.getDescriptor().getParamList());
-			cb.setFlags(mtd.getAccessFlags());
-			cb.setMethod(mtd);
-			ret.add(cb);
-		}
-		return ret;
-	}
-
 	/**
 	 * Inject a callback to the method or constructor defined by codeBlock argument. The method to be called is defined by the callback argument
 	 * and callbackOptions determines when the injected  callback happens and what the arguments are.
@@ -157,18 +63,18 @@ public class InspectorInjector {
 	 * @param callbackOptions Options defining the specifics of the callback
 	 */
 	public void addCallback(CodeBlock codeBlock, CallbackDefinition callback, Option ... callbackOptions) {
-		this.modified = true; // mark as modified
+		this.bct.setModified();
 		List<Option> opts = Arrays.asList(callbackOptions);
 
 		Method m = codeBlock.getMethod();
 		CodeAttribute ca = m.getAttributes().getCode();
 		Code code = ca.getCode();
-		ConstantPool cp = getClassFile().getPool();
+		ConstantPool cp = this.bct.getClassFile().getPool();
 
 		String signature = "()V"; // in case were not passing anything
 		if (opts.contains(Option.PASS_THIS)) {
 			Descriptor desc = new Descriptor("()V");
-			JavaType type = new JavaType(getName());
+			JavaType type = new JavaType(this.bct.getName());
 			List<JavaType> list = new ArrayList<>();
 			list.add(type);
 			desc.setParamList(list);
@@ -259,14 +165,6 @@ public class InspectorInjector {
 			code.add(offset, invoke);
 		}
 
-	}
-
-	/**
-	 * Returns true if the type being inspected is an interface.
-	 * @return is the interface
-	 */
-	public boolean isInterface() {
-		return AccessFlags.isInterface(getClassFile().getAccessFlags());
 	}
 
 }

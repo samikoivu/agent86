@@ -44,7 +44,7 @@ jar {
     manifest {
         attributes (
         'Premain-Class': 'com.samikoivu.agent86.agent.A86',
-//        'Boot-Class-Path': '',
+//        'Boot-Class-Path': 'rej.jar',
         'Can-Redefine-Classes': 'true',
         'Can-Retransform-Classes': 'true',
         )

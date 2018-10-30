@@ -11,7 +11,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.samikoivu.agent86.callbacks.Callbacks;
 import com.samikoivu.agent86.callbacks.ClassCollector;
-import com.samikoivu.agent86.lib.InspectorInjector.Option;
+import com.samikoivu.agent86.lib.bytecode.ByteCodeTools;
+import com.samikoivu.agent86.lib.bytecode.CodeBlock;
+import com.samikoivu.agent86.lib.bytecode.Injector;
+import com.samikoivu.agent86.lib.bytecode.Inspector;
+import com.samikoivu.agent86.lib.bytecode.Injector.Option;
 
 /**
  * Responsible for transforming class definitions. Code is injected into java.lang.String definition, as well as any Servlet methods,
@@ -27,17 +31,19 @@ public class AgentTransformer implements ClassFileTransformer {
 		PrintStream log = logger.getStream();
 		//log.println("className: " + className + " redef: " + classBeingRedefined);
 		try {
-			InspectorInjector ii = new InspectorInjector(className, classfileBuffer);
-			if (className == null) className = ii.getName();
+			ByteCodeTools bct = new ByteCodeTools(className, classfileBuffer);
+			Inspector inspector = bct.getInspector();
+			Injector injector = bct.getInjector();
+			if (className == null) className = inspector.getName();
 			
 			ClassCollector.collect(className); // collect loaded classes
 	
 			// String collection, add a callback to all String constructors
-			if (ii.isFor(String.class)) {
-				List<CodeBlock> cons = ii.getMethods();
+			if (inspector.isFor(String.class)) {
+				List<CodeBlock> cons = inspector.getMethods();
 				for (CodeBlock con : cons) {
 					if (con.isConstructor() && con.isPublic()) {
-						ii.addCallback(con, Callbacks.COLLECT_STRING, Option.BEFORE_RETURN, Option.PASS_THIS);
+						injector.addCallback(con, Callbacks.COLLECT_STRING, Option.BEFORE_RETURN, Option.PASS_THIS);
 					}
 				}
 				
@@ -45,10 +51,10 @@ public class AgentTransformer implements ClassFileTransformer {
 			}
 			
 			// Initial implementation targeted all Servlet subclasses, but targetting just the HttpServlet seems to be just fine
-			if (!ii.isInterface() // don't bother with interfaces
+			if (!inspector.isInterface() // don't bother with interfaces
 				&& "javax/servlet/http/HttpServlet".equals(className)) {
 				// Servlet method injection
-				List<CodeBlock> methods = ii.getMethods();
+				List<CodeBlock> methods = inspector.getMethods();
 				CodeBlock service = null;
 				CodeBlock doGet = null;
 				CodeBlock doPost = null;
@@ -66,25 +72,25 @@ public class AgentTransformer implements ClassFileTransformer {
 		
 				// if there is a service method, inject it, otherwise inject doGet or doPost or both (depending on what exists)
 				if (service != null) {
-					ii.addCallback(service, Callbacks.BEGIN_REQUEST, Option.AT_START, Option.PASS_ARGS);
-					ii.addCallback(service, Callbacks.END_REQUEST, Option.BEFORE_RETURN);
+					injector.addCallback(service, Callbacks.BEGIN_REQUEST, Option.AT_START, Option.PASS_ARGS);
+					injector.addCallback(service, Callbacks.END_REQUEST, Option.BEFORE_RETURN);
 					log.println("Injected " + className + ".service(...)");
 				} else {
 					// no service
 					if (doGet != null) {
-						ii.addCallback(doGet, Callbacks.BEGIN_REQUEST, Option.AT_START, Option.PASS_ARGS);
-						ii.addCallback(doGet, Callbacks.END_REQUEST, Option.BEFORE_RETURN);
+						injector.addCallback(doGet, Callbacks.BEGIN_REQUEST, Option.AT_START, Option.PASS_ARGS);
+						injector.addCallback(doGet, Callbacks.END_REQUEST, Option.BEFORE_RETURN);
 						log.println("Injected " + className + ".doGet(...)");
 					}
 					
 					if (doPost != null) {
-						ii.addCallback(doPost, Callbacks.BEGIN_REQUEST, Option.AT_START, Option.PASS_ARGS);
-						ii.addCallback(doPost, Callbacks.END_REQUEST, Option.BEFORE_RETURN);
+						injector.addCallback(doPost, Callbacks.BEGIN_REQUEST, Option.AT_START, Option.PASS_ARGS);
+						injector.addCallback(doPost, Callbacks.END_REQUEST, Option.BEFORE_RETURN);
 						log.println("Injected " + className + ".doPost(...)");
 					}
 				}
 			}
-			return ii.getData();
+			return bct.getData();
 		} catch (Throwable t) {
 			t.printStackTrace(log);
 			throw t;

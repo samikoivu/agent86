@@ -35,6 +35,9 @@ public class RequestCollector {
 		if (res != null) {
 			res.addHeader("Agent86-ID", id); // inject an ID as a response header
 		}
+		if (req != null) {
+			capture.setURI(req.getRequestURI());			
+		}
 		capture.setID(id);
 		capture.setStart(System.currentTimeMillis());
 	}

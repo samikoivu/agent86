@@ -17,9 +17,11 @@ import com.samikoivu.agent86.callbacks.test.TestCallbacks;
 import com.samikoivu.agent86.callbacks.ClassLoaderUtil;
 import com.samikoivu.agent86.callbacks.test.TestSensor;
 import com.samikoivu.agent86.callbacks.test.TestSensor.TestCallback;
-import com.samikoivu.agent86.lib.CodeBlock;
-import com.samikoivu.agent86.lib.InspectorInjector;
-import com.samikoivu.agent86.lib.InspectorInjector.Option;
+import com.samikoivu.agent86.lib.bytecode.ByteCodeTools;
+import com.samikoivu.agent86.lib.bytecode.CodeBlock;
+import com.samikoivu.agent86.lib.bytecode.Injector;
+import com.samikoivu.agent86.lib.bytecode.Inspector;
+import com.samikoivu.agent86.lib.bytecode.Injector.Option;
 import com.samikoivu.agent86.lib.test.InjectionTest;
 import com.samikoivu.agent86.lib.test.MethodListingTest;
 
@@ -42,8 +44,9 @@ class InspectorInjectorTest {
 	void testMethodListing() throws IOException {
 		Class<?> target = MethodListingTest.class;
 		byte[] data = loadClassData(target);
-	    InspectorInjector ii = new InspectorInjector(target.getName(), data);
-		List<CodeBlock> methods = ii.getMethods();
+		ByteCodeTools bct = new ByteCodeTools(target.getName(), data);
+		Inspector inspector = bct.getInspector();
+		List<CodeBlock> methods = inspector.getMethods();
 		assertEquals(5, methods.size(), "Four methods and constructor");
 		// ensure methods in alphabetical order
 		methods.sort(new Comparator<CodeBlock>() {
@@ -82,8 +85,10 @@ class InspectorInjectorTest {
 	void testIsFor() throws IOException {
 		Class<?> target = InjectionTest.class;
 		byte[] data = loadClassData(target);
-	    InspectorInjector ii = new InspectorInjector(target.getName(), data);
-		assertTrue(ii.isFor(target));
+		ByteCodeTools bct = new ByteCodeTools(target.getName(), data);
+		Inspector inspector = bct.getInspector();
+		assertTrue(inspector.isFor(target));
+		assertFalse(inspector.isFor(String.class));
 	}
 	
 
@@ -91,10 +96,10 @@ class InspectorInjectorTest {
 	void testIsForNoProvidedClassName() throws IOException {
 		Class<?> target = InjectionTest.class;
 		byte[] data = loadClassData(target);
-	    InspectorInjector ii = new InspectorInjector(null, data);
-//		System.out.println("j.l.Class.getName(): " + InjectionTest.class.getName());
-//		System.out.println("Inspection getName(): " + ii.getName());
-		assertTrue(ii.isFor(target));
+		ByteCodeTools bct = new ByteCodeTools(null, data);
+		Inspector inspector = bct.getInspector();
+		assertTrue(inspector.isFor(target));
+		assertFalse(inspector.isFor(String.class));
 	}
 	
 
@@ -103,21 +108,23 @@ class InspectorInjectorTest {
 	void testInjectionAtStart() throws IOException, InstantiationException, IllegalAccessException, NoSuchMethodException, SecurityException, IllegalArgumentException, InvocationTargetException {
 		Class<?> target = InjectionTest.class;
 		byte[] data = loadClassData(target);
-	    InspectorInjector ii = new InspectorInjector(target.getName(), data);
-		List<CodeBlock> methods = ii.getMethods();
+		ByteCodeTools bct = new ByteCodeTools(target.getName(), data);
+		Injector injector = bct.getInjector();
+		Inspector inspector = bct.getInspector();
+		List<CodeBlock> methods = inspector.getMethods();
 		boolean added = false;
 		for (CodeBlock method : methods) {
 			if (method.getName().equals("inc")) {
 				TestCallbacks callback = TestCallbacks.TEST_SENSOR;
 				Option callbackOptions = Option.AT_START;
-				ii.addCallback(method, callback, callbackOptions );
+				injector.addCallback(method, callback, callbackOptions );
 				added = true;
 			}
 		}
 		assertTrue(added, "callback added");
 		
 		ClassLoaderUtil util = new ClassLoaderUtil();
-		Class<?> cls = util.defineClassUtil(InjectionTest.class.getName(), ii.getData());
+		Class<?> cls = util.defineClassUtil(InjectionTest.class.getName(), bct.getData());
 		final Object instance = cls.newInstance();
 		TestSensor.clear();
 		assertFalse(TestSensor.wasCalled(), "Sensor prior to call has not been called");
@@ -151,21 +158,23 @@ class InspectorInjectorTest {
 	void testInjectionAtReturn() throws Exception {
 		Class<?> target = InjectionTest.class;
 		byte[] data = loadClassData(target);
-	    InspectorInjector ii = new InspectorInjector(target.getName(), data);
-		List<CodeBlock> methods = ii.getMethods();
+		ByteCodeTools bct = new ByteCodeTools(target.getName(), data);
+		Injector injector = bct.getInjector();
+		Inspector inspector = bct.getInspector();
+		List<CodeBlock> methods = inspector.getMethods();
 		boolean added = false;
 		for (CodeBlock method : methods) {
 			if (method.getName().equals("inc")) {
 				TestCallbacks callback = TestCallbacks.TEST_SENSOR;
 				Option callbackOptions = Option.BEFORE_RETURN;
-				ii.addCallback(method, callback, callbackOptions );
+				injector.addCallback(method, callback, callbackOptions );
 				added = true;
 			}
 		}
 		assertTrue(added, "callback added");
 		
 		ClassLoaderUtil util = new ClassLoaderUtil();
-		Class<?> cls = util.defineClassUtil(InjectionTest.class.getName(), ii.getData());
+		Class<?> cls = util.defineClassUtil(InjectionTest.class.getName(), bct.getData());
 		final Object instance = cls.newInstance();
 		TestSensor.clear();
 		assertFalse(TestSensor.wasCalled(), "Sensor prior to call has not been called");
@@ -200,20 +209,22 @@ class InspectorInjectorTest {
 	void testInjectionPassingArgs() throws Exception {
 		Class<?> target = InjectionTest.class;
 		byte[] data = loadClassData(target);
-	    InspectorInjector ii = new InspectorInjector(target.getName(), data);
-		List<CodeBlock> methods = ii.getMethods();
+		ByteCodeTools bct = new ByteCodeTools(target.getName(), data);
+		Injector injector = bct.getInjector();
+		Inspector inspector = bct.getInspector();
+		List<CodeBlock> methods = inspector.getMethods();
 		boolean added = false;
 		for (CodeBlock method : methods) {
 			if (method.getName().equals("addAll")) {
 				TestCallbacks callback = TestCallbacks.TEST_SENSOR_WITH_ARGS;
-				ii.addCallback(method, callback, Option.AT_START, Option.PASS_ARGS);
+				injector.addCallback(method, callback, Option.AT_START, Option.PASS_ARGS);
 				added = true;
 			}
 		}
 		assertTrue(added, "callback added");
 		
 		ClassLoaderUtil util = new ClassLoaderUtil();
-		Class<?> cls = util.defineClassUtil(InjectionTest.class.getName(), ii.getData());
+		Class<?> cls = util.defineClassUtil(InjectionTest.class.getName(), bct.getData());
 		final Object instance = cls.newInstance();
 		TestSensor.clear();
 		assertFalse(TestSensor.wasCalled(), "Sensor prior to call has not been called");
